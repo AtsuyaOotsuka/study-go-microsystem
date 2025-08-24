@@ -16,3 +16,6 @@ vendor/
 # OSゴミファイル系
 .DS_Store
 Thumbs.db
+
+# テスト結果
+**/coverage.html
