@@ -1,0 +1,18 @@
+**/.env
+
+# ビルド生成物
+*.exe
+*.out
+*.test
+
+# モジュールキャッシュ
+vendor/
+
+# IDE系
+.vscode/
+.idea/
+*.swp
+
+# OSゴミファイル系
+.DS_Store
+Thumbs.db
