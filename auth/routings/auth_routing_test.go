@@ -12,12 +12,17 @@ import (
 type MockAuthHandler struct{}
 
 func (m *MockAuthHandler) HandleLogin(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"status": "logged in"})
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func (m *MockAuthHandler) HandleRefresh(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
 func TestAuthRouting(t *testing.T) {
 	expected := map[string]string{
-		"/auth/login": "POST",
+		"/auth/login":   "POST",
+		"/auth/refresh": "POST",
 	}
 
 	r := gin.Default()
@@ -32,7 +37,7 @@ func TestAuthRouting(t *testing.T) {
 			r.ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusOK, w.Code)
-			assert.JSONEq(t, `{"status": "logged in"}`, w.Body.String())
+			assert.JSONEq(t, `{"status": "success"}`, w.Body.String())
 		})
 	}
 }

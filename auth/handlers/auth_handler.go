@@ -12,6 +12,7 @@ import (
 
 type AuthHandlerInterface interface {
 	HandleLogin(c *gin.Context)
+	HandleRefresh(c *gin.Context)
 }
 
 type AuthHandlerStruct struct {
@@ -51,6 +52,43 @@ func (h *AuthHandlerStruct) HandleLogin(c *gin.Context) {
 	// 3) パスワード検証（models.User#VerifyPassword が bcrypt.CompareHashAndPassword を呼ぶ想定）
 	if err := user.VerifyPassword(req.Password); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"}) // 本来は曖昧にするが、学習目的のため、分ける
+		return
+	}
+
+	// JWTトークンを作成
+	tokenString, err := h.jwt_svc.CreateJwt(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create JWT"})
+		return
+	}
+
+	resp := map[string]interface{}{
+		"access_token":  tokenString,
+		"refresh_token": user.RefreshToken,
+		"token_type":    "Bearer",
+		"expires_in":    3600,
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+type refreshRequest struct {
+	RefreshToken string `form:"refresh_token" json:"refresh_token" binding:"required"`
+}
+
+func (h *AuthHandlerStruct) HandleRefresh(c *gin.Context) {
+
+	var req refreshRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	userRepository := repositories.UserRepositoryStruct{Db: h.Db}
+
+	user, err := userRepository.GetByRefreshToken(req.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
 		return
 	}
 

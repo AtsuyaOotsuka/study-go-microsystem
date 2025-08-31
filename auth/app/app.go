@@ -18,6 +18,7 @@ type App struct {
 	CSRFHandler        *handlers.CSRFHandlerStruct
 	AuthHandler        *handlers.AuthHandlerStruct
 	HealthCheckHandler *handlers.HealthCheckHandlerStruct
+	RegisterHandler    *handlers.RegisterHandlerStruct
 
 	CsrfMW gin.HandlerFunc
 }
@@ -34,6 +35,7 @@ func NewApp(db *gorm.DB, sqlDB *sql.DB) (*App, func(), error) {
 		CSRFHandler:        handlers.NewCSRFHandler(&csrf_svc.CsrfSvcStruct{}),
 		AuthHandler:        handlers.NewAuthHandler(db, jwtSvc),
 		HealthCheckHandler: handlers.NewHealthCheckHandler(),
+		RegisterHandler:    handlers.NewRegisterHandler(db, jwtSvc, clock_svc.RealClockStruct{}),
 		CsrfMW:             csrfMW.Handler(),
 	}
 
@@ -46,4 +48,5 @@ func (a *App) InitRoutes(r *gin.Engine) {
 	healthCheckHandler := handlers.NewHealthCheckHandler()
 	routings.HealthCheckRouting(r, healthCheckHandler)
 	routings.AuthRouting(r, a.AuthHandler, a.CsrfMW)
+	routings.RegisterRouting(r, a.RegisterHandler, a.CsrfMW)
 }

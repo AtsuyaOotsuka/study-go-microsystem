@@ -28,7 +28,7 @@ func TestNewAppAndInitRoutes(t *testing.T) {
 
 	// App生成とルート初期化
 	db := newTestDB(t) // ← 本物の *gorm.DB
-	sqlDB, err := db.DB()
+	sqlDB, _ := db.DB()
 	a, cleanup, err := app.NewApp(db, sqlDB) // ← これで db.DB() もOK
 	if err != nil {
 		t.Fatal(err)

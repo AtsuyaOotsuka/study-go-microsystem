@@ -12,6 +12,7 @@ import (
 
 type JwtServiceInterface interface {
 	CreateJwt(user *models.User) (string, error)
+	CreateRefreshToken(c clock_svc.ClockInterface) string
 }
 
 type JwtServiceStruct struct {
@@ -40,6 +41,11 @@ func (s *JwtServiceStruct) CreateJwt(user *models.User) (string, error) {
 		return "", err
 	}
 	return tokenString, nil
+}
+
+func (s *JwtServiceStruct) CreateRefreshToken(c clock_svc.ClockInterface) string {
+	refreshToken := fmt.Sprintf("%x", c.Now().UnixNano()) // ランダムな文字列を生成
+	return refreshToken
 }
 
 func (s *JwtServiceStruct) ValidateJwt(tokenString string) (*models.JwtClaims, error) {

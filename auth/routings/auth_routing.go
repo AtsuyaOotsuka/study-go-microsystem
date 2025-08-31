@@ -10,4 +10,5 @@ func AuthRouting(r *gin.Engine, handlerFunc handlers.AuthHandlerInterface, csrfM
 	routerGroup := r.Group("/auth")
 	routerGroup.Use(csrfMW)
 	routerGroup.POST("/login", handlerFunc.HandleLogin)
+	routerGroup.POST("/refresh", handlerFunc.HandleRefresh)
 }
