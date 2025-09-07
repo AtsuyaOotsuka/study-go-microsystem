@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"fmt"
 	"microservices/auth/internal/clock_svc"
 	"microservices/auth/internal/jwt_svc"
 	"microservices/auth/models"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -12,7 +14,7 @@ import (
 )
 
 type RegisterHandlerInterface interface {
-	Register(c *gin.Context)
+	HandleRegister(c *gin.Context)
 }
 
 type RegisterHandlerStruct struct {
@@ -35,7 +37,7 @@ type registerRequest struct {
 	Password string `form:"password" json:"password" binding:"required,min=8"`
 }
 
-func (h *RegisterHandlerStruct) Register(c *gin.Context) {
+func (h *RegisterHandlerStruct) HandleRegister(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -54,10 +56,15 @@ func (h *RegisterHandlerStruct) Register(c *gin.Context) {
 		Email:        req.Email,
 		Password:     string(hashedPassword),
 		RefreshToken: h.jwt_svc.CreateRefreshToken(h.Clock),
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
+
+	fmt.Printf("💥 user = %+v\n", user)
 
 	result := h.Db.Create(&user)
 	if result.Error != nil {
+		fmt.Printf("🔥 result.Error = %v\n", result.Error)
 		c.JSON(500, gin.H{"error": "Failed to create user"})
 		return
 	}

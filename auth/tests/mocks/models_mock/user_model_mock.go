@@ -2,8 +2,10 @@ package models_mock
 
 import (
 	"microservices/auth/models"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func CreateUserMock() *models.User {
@@ -19,8 +21,8 @@ func CreateUserMock() *models.User {
 		Email:        "test@example.com",
 		Password:     string(passwordHash),
 		RefreshToken: "some-refresh-token",
-		CreatedAt:    1234567890,
-		UpdatedAt:    1234567890,
-		DeletedAt:    0,
+		CreatedAt:    time.Unix(1234567890, 0),
+		UpdatedAt:    time.Unix(1234567890, 0),
+		DeletedAt:    gorm.DeletedAt{Time: time.Unix(0, 0), Valid: false},
 	}
 }

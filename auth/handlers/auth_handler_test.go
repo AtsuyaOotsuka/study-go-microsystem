@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"microservices/auth/tests/mocks/global_mock"
 	"microservices/auth/tests/mocks/models_mock"
 	"microservices/auth/tests/mocks/svc_internal/jwt"
 	"net/http"
@@ -11,25 +12,8 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
-
-func newGormWithMock(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
-	t.Helper()
-	sqlDB, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatal(err)
-	}
-	gdb, err := gorm.Open(mysql.New(mysql.Config{
-		Conn:                      sqlDB,
-		SkipInitializeWithVersion: true,
-	}), &gorm.Config{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	return gdb, mock
-}
 
 func TestHandleLogin(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -39,7 +23,7 @@ func TestHandleLogin(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := newGormWithMock(t)
+	gdb, mock := global_mock.NewGormWithMock(t)
 	rows := sqlmock.NewRows([]string{"id", "password", "email"}).
 		AddRow(1, mockUser.Password, mockUser.Email)
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE email = \\?").
@@ -67,7 +51,7 @@ func TestHandleLogin_InvalidPassword(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := newGormWithMock(t)
+	gdb, mock := global_mock.NewGormWithMock(t)
 	rows := sqlmock.NewRows([]string{"id", "password", "email"}).
 		AddRow(1, mockUser.Password, mockUser.Email)
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE email = \\?").
@@ -95,7 +79,7 @@ func TestHandleLogin_UserNotFound(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := newGormWithMock(t)
+	gdb, mock := global_mock.NewGormWithMock(t)
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE email = \\?").
 		WithArgs(mockUser.Email, sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
@@ -124,7 +108,7 @@ func TestHandleLogin_FailedValidation(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	c.Request = req
 
-	gdb, _ := newGormWithMock(t)
+	gdb, _ := global_mock.NewGormWithMock(t)
 
 	handler := NewAuthHandler(gdb, &jwt.JwtServiceMockStruct{}) // ★ モックDBを注入
 	handler.HandleLogin(c)
@@ -141,7 +125,7 @@ func TestHandleLogin_InternalServerError(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := newGormWithMock(t)
+	gdb, mock := global_mock.NewGormWithMock(t)
 	rows := sqlmock.NewRows([]string{"id", "password", "email"}).
 		AddRow(1, mockUser.Password, mockUser.Email)
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE email = \\?").
@@ -167,7 +151,7 @@ func TestHandleRefresh(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 
 	// sqlmock準備
-	gdb, mock := newGormWithMock(t)
+	gdb, mock := global_mock.NewGormWithMock(t)
 
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE refresh_token = \\?").
 		WithArgs("mock_refresh_token", sqlmock.AnyArg()).
@@ -193,7 +177,7 @@ func TestHandleRefresh_InvalidToken(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 
 	// sqlmock準備
-	gdb, mock := newGormWithMock(t)
+	gdb, mock := global_mock.NewGormWithMock(t)
 
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE refresh_token = \\?").
 		WithArgs("invalid_refresh_token", sqlmock.AnyArg()).
@@ -223,7 +207,7 @@ func TestHandleRefresh_NotRequestToken(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	c.Request = req
 
-	gdb, _ := newGormWithMock(t)
+	gdb, _ := global_mock.NewGormWithMock(t)
 
 	handler := NewAuthHandler(gdb, &jwt.JwtServiceMockStruct{}) // ★ モックDBを注入
 	handler.HandleRefresh(c)
@@ -240,7 +224,7 @@ func TestHandleRefresh_InternalServerError(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := newGormWithMock(t)
+	gdb, mock := global_mock.NewGormWithMock(t)
 	rows := sqlmock.NewRows([]string{"id", "password", "email"}).
 		AddRow(1, mockUser.Password, mockUser.Email)
 
