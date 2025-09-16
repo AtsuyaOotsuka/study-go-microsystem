@@ -1,6 +1,7 @@
 package encrypt_pkg
 
 import (
+	"strings"
 	"testing"
 
 	"golang.org/x/crypto/bcrypt"
@@ -26,5 +27,20 @@ func TestCreatePasswordHash(t *testing.T) {
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	if err != nil {
 		t.Fatalf("hashed password does not match the original password: %v", err)
+	}
+}
+
+func TestCreatePasswordHash_withError(t *testing.T) {
+	encryptor := &EncryptPkgStruct{}
+	randomString := strings.Repeat("A", 73)
+	// bcryptのパスワード長制限は72文字なので、オーバーフローさせてエラーを発生させる
+	hashedPassword, err := encryptor.CreatePasswordHash(randomString)
+
+	if hashedPassword != "" {
+		t.Fatal("hashed password should be empty")
+	}
+
+	if err == nil {
+		t.Fatal("error should not be nil")
 	}
 }
