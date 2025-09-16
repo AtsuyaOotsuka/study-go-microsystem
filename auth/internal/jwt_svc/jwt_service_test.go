@@ -3,6 +3,7 @@ package jwt_svc
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"microservices/auth/internal/clock_svc"
 	"microservices/auth/models"
 	"microservices/auth/tests/mocks/svc_internal/clock"
 	"os"
@@ -127,4 +128,20 @@ func TestCreateJwt_SignedString_Error_ByNilKey(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
+}
+
+func TestCreateRefreshToken(t *testing.T) {
+	svc := &JwtServiceStruct{
+		Clock:  clock_svc.RealClockStruct{},
+		Method: jwt.SigningMethodHS256,
+		Key:    []byte(os.Getenv("JWT_SECRET")),
+	}
+
+	token1 := svc.CreateRefreshToken(svc.Clock)
+	time.Sleep(1 * time.Nanosecond) // 異なる値になるように少し待つ
+	token2 := svc.CreateRefreshToken(svc.Clock)
+
+	assert.NotEmpty(t, token1)
+	assert.NotEmpty(t, token2)
+	assert.NotEqual(t, token1, token2) // 異なるトークンになること
 }
