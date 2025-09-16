@@ -8,6 +8,7 @@ import (
 	"microservices/auth/internal/jwt_svc"
 	"microservices/auth/middlewares"
 	"microservices/auth/pkg/csrf_pkg"
+	"microservices/auth/pkg/encrypt_pkg"
 	"microservices/auth/routings"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,8 @@ type App struct {
 func NewApp(db *gorm.DB, sqlDB *sql.DB) (*App, func(), error) {
 
 	csrf_pkg := &csrf_pkg.CsrfPkgStruct{}
+	encrypt_pkg := &encrypt_pkg.EncryptPkgStruct{}
+
 	verifier := csrf_svc.NewVerifier(csrf_pkg, "secrets", clock_svc.RealClockStruct{})
 	csrfMW := middlewares.NewCSRFMiddleware(verifier)
 
@@ -35,7 +38,7 @@ func NewApp(db *gorm.DB, sqlDB *sql.DB) (*App, func(), error) {
 		CSRFHandler:        handlers.NewCSRFHandler(&csrf_svc.CsrfSvcStruct{}),
 		AuthHandler:        handlers.NewAuthHandler(db, jwtSvc),
 		HealthCheckHandler: handlers.NewHealthCheckHandler(),
-		RegisterHandler:    handlers.NewRegisterHandler(db, jwtSvc, clock_svc.RealClockStruct{}),
+		RegisterHandler:    handlers.NewRegisterHandler(db, jwtSvc, encrypt_pkg, clock_svc.RealClockStruct{}),
 		CsrfMW:             csrfMW.Handler(),
 	}
 

@@ -23,12 +23,14 @@ func TestHandleLogin(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := global_mock.NewGormWithMock(t)
+	gdb, mock, cleanup := global_mock.NewGormWithMock(t)
 	rows := sqlmock.NewRows([]string{"id", "password", "email"}).
 		AddRow(1, mockUser.Password, mockUser.Email)
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE email = \\?").
 		WithArgs(mockUser.Email, sqlmock.AnyArg()).
 		WillReturnRows(rows)
+
+	defer cleanup()
 
 	// POSTリクエストをセット
 	body := strings.NewReader("email=test@example.com&password=password123")
@@ -51,12 +53,13 @@ func TestHandleLogin_InvalidPassword(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := global_mock.NewGormWithMock(t)
+	gdb, mock, cleanup := global_mock.NewGormWithMock(t)
 	rows := sqlmock.NewRows([]string{"id", "password", "email"}).
 		AddRow(1, mockUser.Password, mockUser.Email)
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE email = \\?").
 		WithArgs(mockUser.Email, sqlmock.AnyArg()).
 		WillReturnRows(rows)
+	defer cleanup()
 
 	// POSTリクエストをセット
 	body := strings.NewReader("email=test@example.com&password=wrongpassword")
@@ -79,10 +82,12 @@ func TestHandleLogin_UserNotFound(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := global_mock.NewGormWithMock(t)
+	gdb, mock, cleanup := global_mock.NewGormWithMock(t)
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE email = \\?").
 		WithArgs(mockUser.Email, sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
+
+	defer cleanup()
 
 	// POSTリクエストをセット
 	body := strings.NewReader("email=test@example.com&password=password123")
@@ -108,7 +113,8 @@ func TestHandleLogin_FailedValidation(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	c.Request = req
 
-	gdb, _ := global_mock.NewGormWithMock(t)
+	gdb, _, cleanup := global_mock.NewGormWithMock(t)
+	defer cleanup()
 
 	handler := NewAuthHandler(gdb, &jwt.JwtServiceMockStruct{}) // ★ モックDBを注入
 	handler.HandleLogin(c)
@@ -125,12 +131,13 @@ func TestHandleLogin_InternalServerError(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := global_mock.NewGormWithMock(t)
+	gdb, mock, cleanup := global_mock.NewGormWithMock(t)
 	rows := sqlmock.NewRows([]string{"id", "password", "email"}).
 		AddRow(1, mockUser.Password, mockUser.Email)
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE email = \\?").
 		WithArgs(mockUser.Email, sqlmock.AnyArg()).
 		WillReturnRows(rows)
+	defer cleanup()
 
 	// POSTリクエストをセット
 	body := strings.NewReader("email=test@example.com&password=password123")
@@ -151,12 +158,13 @@ func TestHandleRefresh(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 
 	// sqlmock準備
-	gdb, mock := global_mock.NewGormWithMock(t)
+	gdb, mock, cleanup := global_mock.NewGormWithMock(t)
 
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE refresh_token = \\?").
 		WithArgs("mock_refresh_token", sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "email", "refresh_token"}).
 			AddRow(1, "test@example.com", "mock_refresh_token"))
+	defer cleanup()
 
 	// POSTリクエストをセット
 	body := strings.NewReader("refresh_token=mock_refresh_token")
@@ -177,11 +185,12 @@ func TestHandleRefresh_InvalidToken(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 
 	// sqlmock準備
-	gdb, mock := global_mock.NewGormWithMock(t)
+	gdb, mock, cleanup := global_mock.NewGormWithMock(t)
 
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE refresh_token = \\?").
 		WithArgs("invalid_refresh_token", sqlmock.AnyArg()).
 		WillReturnError(gorm.ErrRecordNotFound)
+	defer cleanup()
 
 	// POSTリクエストをセット
 	body := strings.NewReader("refresh_token=invalid_refresh_token")
@@ -207,7 +216,8 @@ func TestHandleRefresh_NotRequestToken(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	c.Request = req
 
-	gdb, _ := global_mock.NewGormWithMock(t)
+	gdb, _, cleanup := global_mock.NewGormWithMock(t)
+	defer cleanup()
 
 	handler := NewAuthHandler(gdb, &jwt.JwtServiceMockStruct{}) // ★ モックDBを注入
 	handler.HandleRefresh(c)
@@ -224,9 +234,10 @@ func TestHandleRefresh_InternalServerError(t *testing.T) {
 	mockUser := models_mock.CreateUserMock()
 
 	// sqlmock準備
-	gdb, mock := global_mock.NewGormWithMock(t)
+	gdb, mock, cleanup := global_mock.NewGormWithMock(t)
 	rows := sqlmock.NewRows([]string{"id", "password", "email"}).
 		AddRow(1, mockUser.Password, mockUser.Email)
+	defer cleanup()
 
 	mock.ExpectQuery("SELECT .* FROM `users`.*WHERE refresh_token = \\?").
 		WithArgs(mockUser.RefreshToken, sqlmock.AnyArg()).

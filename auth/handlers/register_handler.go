@@ -1,15 +1,14 @@
 package handlers
 
 import (
-	"fmt"
 	"microservices/auth/internal/clock_svc"
 	"microservices/auth/internal/jwt_svc"
 	"microservices/auth/models"
+	"microservices/auth/pkg/encrypt_pkg"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -18,16 +17,23 @@ type RegisterHandlerInterface interface {
 }
 
 type RegisterHandlerStruct struct {
-	Db      *gorm.DB
-	jwt_svc jwt_svc.JwtServiceInterface
-	Clock   clock_svc.ClockInterface
+	Db          *gorm.DB
+	jwt_svc     jwt_svc.JwtServiceInterface
+	encrypt_pkg encrypt_pkg.EncryptPkgInterface
+	Clock       clock_svc.ClockInterface
 }
 
-func NewRegisterHandler(db *gorm.DB, jwt_svc jwt_svc.JwtServiceInterface, clock clock_svc.ClockInterface) *RegisterHandlerStruct {
+func NewRegisterHandler(
+	db *gorm.DB,
+	jwt_svc jwt_svc.JwtServiceInterface,
+	encrypt_pkg encrypt_pkg.EncryptPkgInterface,
+	clock clock_svc.ClockInterface,
+) *RegisterHandlerStruct {
 	return &RegisterHandlerStruct{
-		Db:      db,
-		jwt_svc: jwt_svc,
-		Clock:   clock,
+		Db:          db,
+		jwt_svc:     jwt_svc,
+		encrypt_pkg: encrypt_pkg,
+		Clock:       clock,
 	}
 }
 
@@ -45,7 +51,7 @@ func (h *RegisterHandlerStruct) HandleRegister(c *gin.Context) {
 	}
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := h.encrypt_pkg.CreatePasswordHash(req.Password)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to hash password"})
 		return
@@ -60,11 +66,8 @@ func (h *RegisterHandlerStruct) HandleRegister(c *gin.Context) {
 		UpdatedAt:    time.Now(),
 	}
 
-	fmt.Printf("💥 user = %+v\n", user)
-
 	result := h.Db.Create(&user)
 	if result.Error != nil {
-		fmt.Printf("🔥 result.Error = %v\n", result.Error)
 		c.JSON(500, gin.H{"error": "Failed to create user"})
 		return
 	}
