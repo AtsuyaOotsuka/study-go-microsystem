@@ -2,7 +2,7 @@ package db_pkg
 
 import (
 	"fmt"
-	"microservices/auth/models"
+	"microservices/auth/internal/models"
 	"os"
 	"time"
 

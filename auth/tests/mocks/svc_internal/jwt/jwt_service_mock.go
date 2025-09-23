@@ -2,8 +2,8 @@ package jwt
 
 import (
 	"errors"
-	"microservices/auth/internal/clock_svc"
-	"microservices/auth/models"
+	"microservices/auth/internal/models"
+	"microservices/auth/internal/svc/clock_svc"
 )
 
 type JwtServiceMockStruct struct {

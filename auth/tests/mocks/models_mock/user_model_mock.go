@@ -1,7 +1,7 @@
 package models_mock
 
 import (
-	"microservices/auth/models"
+	"microservices/auth/internal/models"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"

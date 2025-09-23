@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"microservices/auth/app"
+	"microservices/auth/internal/app"
 	"microservices/auth/pkg/db_pkg"
 	"os"
 
