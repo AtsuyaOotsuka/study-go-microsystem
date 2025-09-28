@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"microservices/chat/internal/app"
-	"microservices/chat/pkg/mongo_pkg"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -25,14 +24,7 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery())
 
-	MongoPkgStruct, err := mongo_pkg.NewMongoConnect()
-	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
-	}
-
-	defer MongoPkgStruct.Cancel()
-
-	app := app.NewApp(MongoPkgStruct)
+	app := app.NewApp()
 	app.InitRoutes(r)
 
 	port := os.Getenv("PORT")

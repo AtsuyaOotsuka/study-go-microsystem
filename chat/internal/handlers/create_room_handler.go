@@ -21,9 +21,6 @@ func (h *HandlerStruct) CreateRoomHandler(c *gin.Context) {
 	}
 
 	jwtinfo := jwtinfo_svc.NewJwtInfo(c.Request.Context())
-	h.Mongo.ReConnect()
-	defer h.Mongo.Cancel()
-	collection := h.Mongo.Db.Collection(model.RoomCollectionName)
 
 	room := model.Room{
 		Name:      req.Name,
@@ -31,16 +28,16 @@ func (h *HandlerStruct) CreateRoomHandler(c *gin.Context) {
 		CreatedAt: time.Now(),
 	}
 
-	result, err := collection.InsertOne(h.Mongo.Ctx, room)
+	InsertedID, err := h.Mongo.CreateRoom(room)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to create room", "details": err.Error()})
 		return
 	}
-	fmt.Print(result)
+	fmt.Print(InsertedID)
 
 	c.JSON(200, gin.H{
 		"message":    "Room created successfully",
-		"room_id":    result.InsertedID,
+		"room_id":    InsertedID,
 		"room_name":  room.Name,
 		"created_at": room.CreatedAt,
 	})

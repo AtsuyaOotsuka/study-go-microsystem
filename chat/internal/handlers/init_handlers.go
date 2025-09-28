@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"microservices/chat/pkg/mongo_pkg"
+	"microservices/chat/internal/svc/mongo_svc"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,10 +11,12 @@ type HandlersInterface interface {
 }
 
 type HandlerStruct struct {
-	Mongo *mongo_pkg.MongoPkgStruct
+	Mongo mongo_svc.MongoSvcInterface
 }
 
-func NewHandlers(mongo *mongo_pkg.MongoPkgStruct) *HandlerStruct {
+func NewHandlers(
+	mongo mongo_svc.MongoSvcInterface,
+) *HandlerStruct {
 	return &HandlerStruct{
 		Mongo: mongo,
 	}
