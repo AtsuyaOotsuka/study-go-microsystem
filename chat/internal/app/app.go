@@ -8,6 +8,7 @@ import (
 	"microservices/chat/internal/svc/csrf_svc"
 	"microservices/chat/internal/svc/mongo_svc"
 	"microservices/chat/pkg/csrf_pkg"
+	"microservices/chat/pkg/mongo_pkg"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,19 +20,20 @@ type App struct {
 }
 
 func NewApp() *App {
-	csrf_pkg := &csrf_pkg.CsrfPkgStruct{}
+	csrfPkg := &csrf_pkg.CsrfPkgStruct{}
+	mongoPkg := mongo_pkg.NewMongoPkg()
 
-	verifier := csrf_svc.NewVerifier(csrf_pkg, "secrets", clock_svc.RealClockStruct{})
+	verifier := csrf_svc.NewVerifier(csrfPkg, "secrets", clock_svc.RealClockStruct{})
 
 	csrfMW := middlewares.NewCSRFMiddleware(verifier)
 	authMW := middlewares.NewAuthMiddleware()
 
-	mongoSvc := mongo_svc.NewMongoSvc()
+	mongoSvc := mongo_svc.NewMongoSvc(&mongo_pkg.RealMongoDatabase{})
 
 	app := &App{
 		CsrfMW:   csrfMW.Handler(),
 		AuthMW:   authMW.Handler(),
-		Handlers: handlers.NewHandlers(mongoSvc),
+		Handlers: handlers.NewHandlers(mongoSvc, mongoPkg),
 	}
 	return app
 }

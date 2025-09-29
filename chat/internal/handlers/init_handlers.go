@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"microservices/chat/internal/svc/mongo_svc"
+	"microservices/chat/pkg/mongo_pkg"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,13 +12,16 @@ type HandlersInterface interface {
 }
 
 type HandlerStruct struct {
-	Mongo mongo_svc.MongoSvcInterface
+	MongoSvc mongo_svc.MongoSvcInterface
+	MongoPkg mongo_pkg.MongoPkgInterface
 }
 
 func NewHandlers(
-	mongo mongo_svc.MongoSvcInterface,
+	mongo_svc mongo_svc.MongoSvcInterface,
+	mongo_pkg mongo_pkg.MongoPkgInterface,
 ) *HandlerStruct {
 	return &HandlerStruct{
-		Mongo: mongo,
+		MongoSvc: mongo_svc,
+		MongoPkg: mongo_pkg,
 	}
 }

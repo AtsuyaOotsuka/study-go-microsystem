@@ -28,7 +28,7 @@ func (h *HandlerStruct) CreateRoomHandler(c *gin.Context) {
 		CreatedAt: time.Now(),
 	}
 
-	InsertedID, err := h.Mongo.CreateRoom(room)
+	InsertedID, err := h.MongoSvc.CreateRoom(room, h.MongoPkg)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to create room", "details": err.Error()})
 		return

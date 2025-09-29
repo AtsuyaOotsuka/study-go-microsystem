@@ -11,12 +11,22 @@ import (
 )
 
 type MongoPkgStruct struct {
-	Db     *mongo.Database
+	Db     MongoDatabaseInterface
 	Ctx    context.Context
 	Cancel context.CancelFunc
 }
 
-func connect() (*mongo.Client, context.Context, context.CancelFunc, error) {
+type MongoPkgInterface interface {
+	NewMongoConnect(database string) (*MongoPkgStruct, error)
+}
+
+type MongoPkg struct{}
+
+func NewMongoPkg() *MongoPkg {
+	return &MongoPkg{}
+}
+
+func (m *MongoPkg) connect() (*mongo.Client, context.Context, context.CancelFunc, error) {
 	// タイムアウト付きのcontext
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
 
@@ -40,19 +50,20 @@ func connect() (*mongo.Client, context.Context, context.CancelFunc, error) {
 	return client, ctx, cancelFunc, nil
 }
 
-func NewMongoConnect(database string) (*MongoPkgStruct, error) {
-	client, ctx, cancelFunc, err := connect()
+func (m *MongoPkg) NewMongoConnect(database string) (*MongoPkgStruct, error) {
+	client, ctx, cancelFunc, err := m.connect()
 	if err != nil {
 		return nil, err
 	}
 
-	m := &MongoPkgStruct{}
-	m.Ctx = ctx
-	m.Cancel = cancelFunc
-	m.Db = client.Database(database)
+	mongoPkgStruct := &MongoPkgStruct{}
+	mongoPkgStruct.Ctx = ctx
+	mongoPkgStruct.Cancel = cancelFunc
+	mongoClient := &RealMongoClient{client: client}
+	mongoPkgStruct.Db = mongoClient.Database(database)
 	fmt.Println("Connected to MongoDB!")
 
-	return m, nil
+	return mongoPkgStruct, nil
 }
 
 // func (m *MongoPkgStruct) ReConnect() error {
