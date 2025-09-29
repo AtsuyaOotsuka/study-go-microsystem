@@ -25,6 +25,9 @@ github.com/stretchr/testify/mock を追加して、mock注入を容易にして�
 テスト構築可能な構造にはおおよそしてあるが、現時点ではおそらく不十分なので、次回は
 この部分のテストを書きながら調整を行う
 
+9/29
+mongo周りのテストを追加
+
 ## 失敗談
 9/7 
 gormのインサート部分のテストを実装
@@ -50,3 +53,12 @@ mongoとの接続処をDIの関係で、mainで行なっていたが、これだ
 もう少し、テストを考慮してDIができる構造を意識する必要がある。
 今回は、接続部分をパッケージに分離し、サービス層でパッケージを呼び出し更新をかける構造に変更。
 おそらく、このあと、パッケージ側のテスト構築時に新たな問題は発生しそうだが、取り急ぎHandlerはテストが書ける構造になった。
+
+9/29
+エラーの見方がまだ、よく理解しきれていない、
+
+```
+panic: interface conversion: *mongo_svc.MongoCollectionMock is not mongo_pkg.MongoCollectionInterface: missing method InsertOne [recovered]
+```
+
+この辺のインターフェースの定義ずれのエラーをすぐに見抜けない状況なので、数をこなして、行く必要がある
