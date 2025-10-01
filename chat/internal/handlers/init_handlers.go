@@ -8,6 +8,7 @@ import (
 )
 
 type HandlersInterface interface {
+	HealthCheckHandler(c *gin.Context)
 	CreateRoomHandler(c *gin.Context)
 }
 
