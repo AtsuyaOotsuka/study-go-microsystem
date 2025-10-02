@@ -26,6 +26,7 @@ func (h *HandlerStruct) CreateRoomHandler(c *gin.Context) {
 		Name:      req.Name,
 		OwnerID:   jwtinfo.UserID,
 		CreatedAt: time.Now(),
+		Members:   []int{jwtinfo.UserID},
 	}
 
 	InsertedID, err := h.MongoSvc.CreateRoom(room, h.MongoPkg)

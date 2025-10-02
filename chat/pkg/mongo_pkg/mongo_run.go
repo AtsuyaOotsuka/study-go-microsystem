@@ -14,6 +14,8 @@ type MongoDatabaseInterface interface {
 
 type MongoCollectionInterface interface {
 	InsertOne(ctx context.Context, document interface{}) (string, error)
+	FindOne(ctx context.Context, filter interface{}, object interface{}) error
+	UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error)
 }
 
 // RealMongoDatabase wraps *mongo.Database
@@ -43,6 +45,15 @@ func (r *RealMongoCollection) InsertOne(ctx context.Context, document interface{
 	}
 
 	return id.Hex(), nil
+}
+
+func (r *RealMongoCollection) FindOne(ctx context.Context, filter interface{}, object interface{}) error {
+	err := r.coll.FindOne(ctx, filter).Decode(object)
+	return err
+}
+
+func (r *RealMongoCollection) UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error) {
+	return r.coll.UpdateOne(ctx, filter, update)
 }
 
 type RealMongoClient struct {

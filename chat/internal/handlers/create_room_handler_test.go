@@ -5,6 +5,7 @@ import (
 	"microservices/chat/internal/model"
 	"microservices/chat/internal/svc/jwtinfo_svc"
 	"microservices/chat/pkg/mongo_pkg"
+	"microservices/chat/tests/mocks/svc/mock_mongo_svc"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,24 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-type MongoSvcMock struct {
-	mock.Mock
-}
-
-func (m *MongoSvcMock) CreateRoom(room model.Room, mongo_pkg mongo_pkg.MongoPkgInterface) (interface{}, error) {
-	args := m.Called(room, mongo_pkg)
-	return args.Get(0), args.Error(1)
-}
-
-type MongoSvcMockWithErrorMock struct {
-	mock.Mock
-}
-
-func (m *MongoSvcMockWithErrorMock) CreateRoom(room model.Room, mongo_pkg mongo_pkg.MongoPkgInterface) (interface{}, error) {
-	args := m.Called(room, mongo_pkg)
-	return args.Get(0), args.Error(1)
-}
 
 type MongoPkgMock struct{}
 
@@ -47,7 +30,7 @@ func TestCreateRoomHandler(t *testing.T) {
 
 	// Mock request
 	mockPkg := &MongoPkgMock{}
-	mockSvc := new(MongoSvcMock)
+	mockSvc := new(mock_mongo_svc.MongoSvcMock)
 	mockSvc.On("CreateRoom", mock.MatchedBy(func(r model.Room) bool {
 		return r.Name == "TestRoom"
 	}), mockPkg).Return("mocked_room_id", nil)
@@ -75,7 +58,7 @@ func TestCreateRoomHandler_InvalidRequest(t *testing.T) {
 
 	// Mock request
 	mockPkg := &MongoPkgMock{}
-	mockSvc := new(MongoSvcMock)
+	mockSvc := new(mock_mongo_svc.MongoSvcMock)
 	c.Set("mongo", mockSvc)
 
 	body := strings.NewReader("") // Missing 'name' field
@@ -100,7 +83,7 @@ func TestCreateRoomHandler_DBError(t *testing.T) {
 
 	// Mock request
 	mockPkg := &MongoPkgMock{}
-	mockSvc := new(MongoSvcMockWithErrorMock)
+	mockSvc := new(mock_mongo_svc.MongoSvcMockWithErrorMock)
 	mockSvc.On("CreateRoom", mock.Anything, mockPkg).Return(nil, assert.AnError)
 	c.Set("mongo", mockSvc)
 

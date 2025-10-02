@@ -17,6 +17,9 @@ func (m *MockHandlers) CreateRoomHandler(c *gin.Context) {
 func (m *MockHandlers) HealthCheckHandler(c *gin.Context) {
 	c.JSON(200, gin.H{"status": "success"})
 }
+func (m *MockHandlers) JoinRoomHandler(c *gin.Context) {
+	c.JSON(200, gin.H{"status": "success"})
+}
 
 type MockMiddleware struct{}
 

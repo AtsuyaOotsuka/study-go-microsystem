@@ -14,5 +14,6 @@ type Rootings struct {
 func Routing(r *gin.Engine, csrfMW gin.HandlerFunc, authMW gin.HandlerFunc, handlers handlers.HandlersInterface) {
 	r.Use(csrfMW, authMW)
 	r.POST("/room_create", handlers.CreateRoomHandler)
+	r.POST("/room_join", handlers.JoinRoomHandler)
 	r.GET("/health", handlers.HealthCheckHandler)
 }

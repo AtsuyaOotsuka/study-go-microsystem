@@ -8,4 +8,5 @@ type Room struct {
 	Name      string
 	OwnerID   int
 	CreatedAt time.Time
+	Members   []int
 }

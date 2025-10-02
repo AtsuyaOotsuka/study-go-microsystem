@@ -1,4 +1,4 @@
-package csrf_pkg
+package mock_csrf_pkg
 
 import "github.com/stretchr/testify/mock"
 
