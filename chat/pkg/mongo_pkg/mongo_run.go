@@ -8,28 +8,51 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Mongo Cursor
+type MongoCursorInterface interface {
+	Next(ctx context.Context) bool
+	Decode(val interface{}) error
+	Close(ctx context.Context) error
+}
+
+type RealMongoCursor struct {
+	cursor *mongo.Cursor
+}
+
+func (r *RealMongoCursor) Next(ctx context.Context) bool {
+	return r.cursor.Next(ctx)
+}
+
+func (r *RealMongoCursor) Decode(val interface{}) error {
+	return r.cursor.Decode(val)
+}
+
+func (r *RealMongoCursor) Close(ctx context.Context) error {
+	return r.cursor.Close(ctx)
+}
+
+// Mongo Database
 type MongoDatabaseInterface interface {
 	Collection(name string) MongoCollectionInterface
 }
 
-type MongoCollectionInterface interface {
-	InsertOne(ctx context.Context, document interface{}) (string, error)
-	FindOne(ctx context.Context, filter interface{}, object interface{}) error
-	UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error)
-}
-
-// RealMongoDatabase wraps *mongo.Database
 type RealMongoDatabase struct {
 	db *mongo.Database
 }
 
-// 正しく interface を返すようにする
 func (r *RealMongoDatabase) Collection(name string) MongoCollectionInterface {
 	// *mongo.Collection を RealMongoCollection に包んで返す
 	return &RealMongoCollection{coll: r.db.Collection(name)}
 }
 
-// RealMongoCollection wraps *mongo.Collection
+// Mongo Collection
+type MongoCollectionInterface interface {
+	InsertOne(ctx context.Context, document interface{}) (string, error)
+	Find(ctx context.Context, filter interface{}) (cursor MongoCursorInterface, err error)
+	FindOne(ctx context.Context, filter interface{}, object interface{}) error
+	UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error)
+}
+
 type RealMongoCollection struct {
 	coll *mongo.Collection
 }
@@ -47,6 +70,11 @@ func (r *RealMongoCollection) InsertOne(ctx context.Context, document interface{
 	return id.Hex(), nil
 }
 
+func (r *RealMongoCollection) Find(ctx context.Context, filter interface{}) (cursor MongoCursorInterface, err error) {
+	cursor, err = r.coll.Find(ctx, filter)
+	return
+}
+
 func (r *RealMongoCollection) FindOne(ctx context.Context, filter interface{}, object interface{}) error {
 	err := r.coll.FindOne(ctx, filter).Decode(object)
 	return err
@@ -56,6 +84,7 @@ func (r *RealMongoCollection) UpdateOne(ctx context.Context, filter interface{},
 	return r.coll.UpdateOne(ctx, filter, update)
 }
 
+// Mongo Client
 type RealMongoClient struct {
 	client *mongo.Client
 }

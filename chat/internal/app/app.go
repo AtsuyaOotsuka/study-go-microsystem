@@ -4,6 +4,7 @@ import (
 	"microservices/chat/internal/handlers"
 	"microservices/chat/internal/middlewares"
 	"microservices/chat/internal/routings"
+	"microservices/chat/internal/svc/chat_svc"
 	"microservices/chat/internal/svc/clock_svc"
 	"microservices/chat/internal/svc/csrf_svc"
 	"microservices/chat/internal/svc/mongo_svc"
@@ -30,10 +31,12 @@ func NewApp() *App {
 
 	mongoSvc := mongo_svc.NewMongoSvc(&mongo_pkg.RealMongoDatabase{})
 
+	chatSvc := chat_svc.NewChatSvc()
+
 	app := &App{
 		CsrfMW:   csrfMW.Handler(),
 		AuthMW:   authMW.Handler(),
-		Handlers: handlers.NewHandlers(mongoSvc, mongoPkg),
+		Handlers: handlers.NewHandlers(mongoSvc, mongoPkg, chatSvc),
 	}
 	return app
 }

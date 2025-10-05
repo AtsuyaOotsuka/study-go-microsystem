@@ -15,5 +15,6 @@ func Routing(r *gin.Engine, csrfMW gin.HandlerFunc, authMW gin.HandlerFunc, hand
 	r.Use(csrfMW, authMW)
 	r.POST("/room_create", handlers.CreateRoomHandler)
 	r.POST("/room_join", handlers.JoinRoomHandler)
+	r.GET("/room_list", handlers.RoomListHandler)
 	r.GET("/health", handlers.HealthCheckHandler)
 }

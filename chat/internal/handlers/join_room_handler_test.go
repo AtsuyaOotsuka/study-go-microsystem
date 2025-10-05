@@ -4,6 +4,7 @@ import (
 	"context"
 	"microservices/chat/internal/model"
 	"microservices/chat/internal/svc/jwtinfo_svc"
+	"microservices/chat/tests/mocks/svc/mock_chat_svc"
 	"microservices/chat/tests/mocks/svc/mock_mongo_svc"
 	"net/http/httptest"
 	"strings"
@@ -18,12 +19,12 @@ func TestJoinRoomHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	mockPkg := &MongoPkgMock{}
-	mockSvc := new(mock_mongo_svc.MongoSvcMock)
-	mockSvc.On("GetRoomByID", "valid_room_id", mockPkg).Return(model.Room{}, nil)
+	mongoMockPkg := &MongoPkgMock{}
+	mongoMockSvc := new(mock_mongo_svc.MongoSvcMock)
+	mongoMockSvc.On("GetRoomByID", "valid_room_id", mongoMockPkg).Return(model.Room{}, nil)
 
-	mockSvc.On("JoinRoom", "valid_room_id", int(12345), mockPkg).Return(nil)
-	c.Set("mongo", mockSvc)
+	mongoMockSvc.On("JoinRoom", "valid_room_id", int(12345), mongoMockPkg).Return(nil)
+	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
 
 	body := strings.NewReader("room_id=valid_room_id")
 	req := httptest.NewRequest("POST", "/join_room", body)
@@ -33,7 +34,7 @@ func TestJoinRoomHandler(t *testing.T) {
 	req = req.WithContext(ctx)
 	c.Request = req
 
-	handler := NewHandlers(mockSvc, mockPkg)
+	handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
 	handler.JoinRoomHandler(c)
 
 	assert.Equal(t, 200, w.Code)
@@ -45,11 +46,11 @@ func TestJoinRoomHandlerGetRoomByIDError(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	mockPkg := &MongoPkgMock{}
-	mockSvc := new(mock_mongo_svc.MongoSvcMock)
-	mockSvc.On("GetRoomByID", "valid_room_id", mockPkg).Return(model.Room{}, assert.AnError)
+	mongoMockPkg := &MongoPkgMock{}
+	mongoMockSvc := new(mock_mongo_svc.MongoSvcMock)
+	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
 
-	c.Set("mongo", mockSvc)
+	mongoMockSvc.On("GetRoomByID", "valid_room_id", mongoMockPkg).Return(model.Room{}, assert.AnError)
 
 	body := strings.NewReader("room_id=valid_room_id")
 	req := httptest.NewRequest("POST", "/join_room", body)
@@ -59,7 +60,7 @@ func TestJoinRoomHandlerGetRoomByIDError(t *testing.T) {
 	req = req.WithContext(ctx)
 	c.Request = req
 
-	handler := NewHandlers(mockSvc, mockPkg)
+	handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
 	handler.JoinRoomHandler(c)
 
 	assert.Equal(t, 500, w.Code)
@@ -71,12 +72,11 @@ func TestJoinRoomHandlerJoinRoomError(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	mockPkg := &MongoPkgMock{}
-	mockSvc := new(mock_mongo_svc.MongoSvcMock)
-	mockSvc.On("GetRoomByID", "valid_room_id", mockPkg).Return(model.Room{}, nil)
-	mockSvc.On("JoinRoom", "valid_room_id", int(12345), mockPkg).Return(assert.AnError)
-
-	c.Set("mongo", mockSvc)
+	mongoMockPkg := &MongoPkgMock{}
+	mongoMockSvc := new(mock_mongo_svc.MongoSvcMock)
+	mongoMockSvc.On("GetRoomByID", "valid_room_id", mongoMockPkg).Return(model.Room{}, nil)
+	mongoMockSvc.On("JoinRoom", "valid_room_id", int(12345), mongoMockPkg).Return(assert.AnError)
+	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
 
 	body := strings.NewReader("room_id=valid_room_id")
 	req := httptest.NewRequest("POST", "/join_room", body)
@@ -86,7 +86,7 @@ func TestJoinRoomHandlerJoinRoomError(t *testing.T) {
 	req = req.WithContext(ctx)
 	c.Request = req
 
-	handler := NewHandlers(mockSvc, mockPkg)
+	handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
 	handler.JoinRoomHandler(c)
 
 	assert.Equal(t, 500, w.Code)
@@ -98,9 +98,9 @@ func TestJoinRoomHandlerInvalidRequest(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	mockPkg := &MongoPkgMock{}
-	mockSvc := new(mock_mongo_svc.MongoSvcMock)
-	c.Set("mongo", mockSvc)
+	mongoMockPkg := &MongoPkgMock{}
+	mongoMockSvc := new(mock_mongo_svc.MongoSvcMock)
+	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
 
 	body := strings.NewReader("") // Missing 'room_id' field
 	req := httptest.NewRequest("POST", "/join_room", body)
@@ -110,7 +110,7 @@ func TestJoinRoomHandlerInvalidRequest(t *testing.T) {
 	req = req.WithContext(ctx)
 	c.Request = req
 
-	handler := NewHandlers(mockSvc, mockPkg)
+	handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
 	handler.JoinRoomHandler(c)
 
 	assert.Equal(t, 400, w.Code)

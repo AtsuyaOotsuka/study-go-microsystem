@@ -1,6 +1,7 @@
 package mongo_svc
 
 import (
+	"fmt"
 	"microservices/chat/internal/model"
 	"microservices/chat/pkg/mongo_pkg"
 
@@ -12,6 +13,7 @@ type MongoSvcInterface interface {
 	CreateRoom(room model.Room, mongo_pkg mongo_pkg.MongoPkgInterface) (interface{}, error)
 	GetRoomByID(roomID string, mongo_pkg mongo_pkg.MongoPkgInterface) (model.Room, error)
 	JoinRoom(roomID string, userID int, mongo_pkg mongo_pkg.MongoPkgInterface) error
+	GetRooms(userID int, target string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.Room, error)
 }
 
 type MongoSvcStruct struct {
@@ -106,4 +108,46 @@ func (m *MongoSvcStruct) JoinRoom(roomID string, userID int, mongo_pkg mongo_pkg
 	}
 
 	return nil
+}
+
+func (m *MongoSvcStruct) GetRooms(userID int, target string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.Room, error) {
+	var filter bson.M
+	switch target {
+	case "all":
+		filter = bson.M{
+			"$or": []bson.M{
+				{"isprivate": false},
+				{"members": userID}, // 参加済みの場合はプライベートでも表示
+			},
+		}
+	case "joined":
+		filter = bson.M{"members": userID} // 参加済みのものだけ
+	default:
+		return nil, fmt.Errorf("invalid target: %s", target)
+	}
+
+	mongo, err := Init(mongo_pkg)
+	if err != nil {
+		return nil, err
+	}
+
+	defer mongo.MongoPkgStruct.Cancel()
+
+	collection := mongo.MongoPkgStruct.Db.Collection(model.RoomCollectionName)
+	cursor, err := collection.Find(mongo.MongoPkgStruct.Ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(mongo.MongoPkgStruct.Ctx)
+
+	var rooms []model.Room
+	for cursor.Next(mongo.MongoPkgStruct.Ctx) {
+		var room model.Room
+		if err := cursor.Decode(&room); err != nil {
+			return nil, err
+		}
+		rooms = append(rooms, room)
+	}
+
+	return rooms, nil
 }

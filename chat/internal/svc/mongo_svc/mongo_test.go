@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -263,6 +264,170 @@ func TestJoinRoomWithUpdateOneError(t *testing.T) {
 	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
 
 	err := mockSvcStruct.JoinRoom("64a7b2f4e13e4c3f9c8b4567", 1, mongoPkgMock)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestGetRoomsForAll(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	var room model.Room
+	mongoCursorMock := new(mock_mongo_pkg.MongoCursorMock)
+	mongoCursorMock.On("Next", mock.Anything).Return(true).Once()
+	mongoCursorMock.On("Next", mock.Anything).Return(false).Once()
+	mongoCursorMock.On("Decode", &room).Return(nil)
+	mongoCursorMock.On("Close", mock.Anything).Return(nil)
+
+	filter := bson.M{
+		"$or": []bson.M{
+			{"isprivate": false},
+			{"members": 1},
+		},
+	}
+
+	mongoCollectionMock.On("Find", mock.Anything, filter).Return(mongoCursorMock, nil)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+	_, err := mockSvcStruct.GetRooms(1, "all", mongoPkgMock)
+
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestGetRoomsForJoined(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	var room model.Room
+	mongoCursorMock := new(mock_mongo_pkg.MongoCursorMock)
+	mongoCursorMock.On("Next", mock.Anything).Return(true).Once()
+	mongoCursorMock.On("Next", mock.Anything).Return(false).Once()
+	mongoCursorMock.On("Decode", &room).Return(nil)
+	mongoCursorMock.On("Close", mock.Anything).Return(nil)
+
+	filter := bson.M{"members": 1} // 参加済みのものだけ
+
+	mongoCollectionMock.On("Find", mock.Anything, filter).Return(mongoCursorMock, nil)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+	_, err := mockSvcStruct.GetRooms(1, "joined", mongoPkgMock)
+
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestGetRoomsError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgWithErrorMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(nil, assert.AnError)
+
+	mockSvcStruct := NewMongoSvc(nil)
+
+	_, err := mockSvcStruct.GetRooms(1, "all", mongoPkgMock)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestGetRoomsWithInvalidTarget(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+
+	_, err := mockSvcStruct.GetRooms(1, "invalid_target", mongoPkgMock)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestGetRoomsWithFindError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	mongoCursorMock := new(mock_mongo_pkg.MongoCursorMock)
+
+	filter := bson.M{
+		"$or": []bson.M{
+			{"isprivate": false},
+			{"members": 1},
+		},
+	}
+
+	mongoCollectionMock.On("Find", mock.Anything, filter).Return(mongoCursorMock, assert.AnError)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+	_, err := mockSvcStruct.GetRooms(1, "all", mongoPkgMock)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestGetRoomsWithDecodeError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	var room model.Room
+	mongoCursorMock := new(mock_mongo_pkg.MongoCursorMock)
+	mongoCursorMock.On("Next", mock.Anything).Return(true).Once()
+	mongoCursorMock.On("Next", mock.Anything).Return(false).Once()
+	mongoCursorMock.On("Decode", &room).Return(assert.AnError)
+	mongoCursorMock.On("Close", mock.Anything).Return(nil)
+
+	filter := bson.M{
+		"$or": []bson.M{
+			{"isprivate": false},
+			{"members": 1},
+		},
+	}
+
+	mongoCollectionMock.On("Find", mock.Anything, filter).Return(mongoCursorMock, nil)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+	_, err := mockSvcStruct.GetRooms(1, "all", mongoPkgMock)
 
 	if err == nil {
 		t.Errorf("Expected error, but got none")

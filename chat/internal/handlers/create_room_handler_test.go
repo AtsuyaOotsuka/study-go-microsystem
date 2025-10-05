@@ -5,6 +5,7 @@ import (
 	"microservices/chat/internal/model"
 	"microservices/chat/internal/svc/jwtinfo_svc"
 	"microservices/chat/pkg/mongo_pkg"
+	"microservices/chat/tests/mocks/svc/mock_chat_svc"
 	"microservices/chat/tests/mocks/svc/mock_mongo_svc"
 	"net/http"
 	"net/http/httptest"
@@ -29,12 +30,13 @@ func TestCreateRoomHandler(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 
 	// Mock request
-	mockPkg := &MongoPkgMock{}
-	mockSvc := new(mock_mongo_svc.MongoSvcMock)
-	mockSvc.On("CreateRoom", mock.MatchedBy(func(r model.Room) bool {
+	mongoMockPkg := &MongoPkgMock{}
+	mongoMockSvc := new(mock_mongo_svc.MongoSvcMock)
+	mongoMockSvc.On("CreateRoom", mock.MatchedBy(func(r model.Room) bool {
 		return r.Name == "TestRoom"
-	}), mockPkg).Return("mocked_room_id", nil)
-	c.Set("mongo", mockSvc)
+	}), mongoMockPkg).Return("mocked_room_id", nil)
+
+	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
 
 	body := strings.NewReader("name=TestRoom")
 	req := httptest.NewRequest("POST", "/rooms", body)
@@ -45,7 +47,7 @@ func TestCreateRoomHandler(t *testing.T) {
 
 	c.Request = req
 
-	Handler := NewHandlers(mockSvc, mockPkg)
+	Handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
 	Handler.CreateRoomHandler(c)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
@@ -57,9 +59,9 @@ func TestCreateRoomHandler_InvalidRequest(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 
 	// Mock request
-	mockPkg := &MongoPkgMock{}
-	mockSvc := new(mock_mongo_svc.MongoSvcMock)
-	c.Set("mongo", mockSvc)
+	mongoMockPkg := &MongoPkgMock{}
+	mongoMockSvc := new(mock_mongo_svc.MongoSvcMock)
+	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
 
 	body := strings.NewReader("") // Missing 'name' field
 	req := httptest.NewRequest("POST", "/rooms", body)
@@ -70,7 +72,7 @@ func TestCreateRoomHandler_InvalidRequest(t *testing.T) {
 
 	c.Request = req
 
-	Handler := NewHandlers(mockSvc, mockPkg)
+	Handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
 	Handler.CreateRoomHandler(c)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
@@ -82,10 +84,10 @@ func TestCreateRoomHandler_DBError(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 
 	// Mock request
-	mockPkg := &MongoPkgMock{}
-	mockSvc := new(mock_mongo_svc.MongoSvcMockWithErrorMock)
-	mockSvc.On("CreateRoom", mock.Anything, mockPkg).Return(nil, assert.AnError)
-	c.Set("mongo", mockSvc)
+	mongoMockPkg := &MongoPkgMock{}
+	mongoMockSvc := new(mock_mongo_svc.MongoSvcMockWithErrorMock)
+	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
+	mongoMockSvc.On("CreateRoom", mock.Anything, mongoMockPkg).Return(nil, assert.AnError)
 
 	body := strings.NewReader("name=TestRoom")
 	req := httptest.NewRequest("POST", "/rooms", body)
@@ -96,7 +98,7 @@ func TestCreateRoomHandler_DBError(t *testing.T) {
 
 	c.Request = req
 
-	Handler := NewHandlers(mockSvc, mockPkg)
+	Handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
 	Handler.CreateRoomHandler(c)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }

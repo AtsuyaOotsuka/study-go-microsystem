@@ -10,7 +10,8 @@ import (
 )
 
 type CreateRoomRequest struct {
-	Name string `form:"name" json:"name" binding:"required"`
+	Name      string `form:"name" json:"name" binding:"required"`
+	IsPrivate bool   `form:"is_private" json:"is_private"`
 }
 
 func (h *HandlerStruct) CreateRoomHandler(c *gin.Context) {
@@ -27,6 +28,7 @@ func (h *HandlerStruct) CreateRoomHandler(c *gin.Context) {
 		OwnerID:   jwtinfo.UserID,
 		CreatedAt: time.Now(),
 		Members:   []int{jwtinfo.UserID},
+		IsPrivate: req.IsPrivate,
 	}
 
 	InsertedID, err := h.MongoSvc.CreateRoom(room, h.MongoPkg)
