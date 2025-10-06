@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"microservices/chat/internal/model"
 	"microservices/chat/pkg/mongo_pkg"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,6 +15,7 @@ type MongoSvcInterface interface {
 	GetRoomByID(roomID string, mongo_pkg mongo_pkg.MongoPkgInterface) (model.Room, error)
 	JoinRoom(roomID string, userID int, mongo_pkg mongo_pkg.MongoPkgInterface) error
 	GetRooms(userID int, target string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.Room, error)
+	PostChatMessage(roomID string, userID int, message string, mongo_pkg mongo_pkg.MongoPkgInterface) error
 }
 
 type MongoSvcStruct struct {
@@ -150,4 +152,36 @@ func (m *MongoSvcStruct) GetRooms(userID int, target string, mongo_pkg mongo_pkg
 	}
 
 	return rooms, nil
+}
+
+func (m *MongoSvcStruct) PostChatMessage(roomID string, userID int, message string, mongo_pkg mongo_pkg.MongoPkgInterface) error {
+	mongo, err := Init(mongo_pkg)
+	if err != nil {
+		return err
+	}
+
+	defer mongo.MongoPkgStruct.Cancel()
+
+	collection := mongo.MongoPkgStruct.Db.Collection(model.ChatMessageCollectionName)
+
+	// roomIDをObjectIDに変換
+	id, err := primitive.ObjectIDFromHex(roomID)
+	if err != nil {
+		return err
+	}
+
+	chatMessage := model.ChatMessage{
+		RoomID:        id.Hex(),
+		UserID:        userID,
+		Message:       message,
+		CreatedAt:     time.Now(),
+		IsReadUserIds: []int{},
+	}
+
+	_, err = collection.InsertOne(mongo.MongoPkgStruct.Ctx, chatMessage)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

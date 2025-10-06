@@ -435,3 +435,108 @@ func TestGetRoomsWithDecodeError(t *testing.T) {
 
 	mongoPkgMock.AssertExpectations(t)
 }
+
+func TestPostChatMessage(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	mongoCollectionMock.On("InsertOne", mock.Anything, mock.Anything).Return("mocked_id", nil)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", model.ChatMessageCollectionName).Return(mongoCollectionMock)
+
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+
+	err := mockSvcStruct.PostChatMessage(
+		"64a7b2f4e13e4c3f9c8b4567",
+		1,
+		"Hello, World!",
+		mongoPkgMock,
+	)
+
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestPostChatMessageError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgWithErrorMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(nil, assert.AnError)
+
+	mockSvcStruct := NewMongoSvc(nil)
+
+	err := mockSvcStruct.PostChatMessage(
+		"64a7b2f4e13e4c3f9c8b4567",
+		1,
+		"Hello, World!",
+		mongoPkgMock,
+	)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestPostChatMessageWithObjectIDFromHexError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", model.ChatMessageCollectionName).Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+
+	err := mockSvcStruct.PostChatMessage(
+		"invalid_object_id",
+		1,
+		"Hello, World!",
+		mongoPkgMock,
+	)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestPostChatMessageWithInsertOneError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionInsertErrorMock)
+	mongoCollectionMock.On("InsertOne", mock.Anything, mock.Anything).Return("", assert.AnError)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", model.ChatMessageCollectionName).Return(mongoCollectionMock)
+
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+
+	err := mockSvcStruct.PostChatMessage(
+		"64a7b2f4e13e4c3f9c8b4567",
+		1,
+		"Hello, World!",
+		mongoPkgMock,
+	)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}

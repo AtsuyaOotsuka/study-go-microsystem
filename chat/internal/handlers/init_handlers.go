@@ -13,6 +13,7 @@ type HandlersInterface interface {
 	CreateRoomHandler(c *gin.Context)
 	JoinRoomHandler(c *gin.Context)
 	RoomListHandler(c *gin.Context)
+	PostChatMessageHandler(c *gin.Context)
 }
 
 type HandlerStruct struct {
