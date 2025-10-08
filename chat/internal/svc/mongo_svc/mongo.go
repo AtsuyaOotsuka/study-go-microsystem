@@ -16,6 +16,7 @@ type MongoSvcInterface interface {
 	JoinRoom(roomID string, userID int, mongo_pkg mongo_pkg.MongoPkgInterface) error
 	GetRooms(userID int, target string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.Room, error)
 	PostChatMessage(roomID string, userID int, message string, mongo_pkg mongo_pkg.MongoPkgInterface) error
+	GetChatMessages(roomID string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.ChatMessage, error)
 }
 
 type MongoSvcStruct struct {
@@ -184,4 +185,30 @@ func (m *MongoSvcStruct) PostChatMessage(roomID string, userID int, message stri
 	}
 
 	return nil
+}
+
+func (m *MongoSvcStruct) GetChatMessages(roomID string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.ChatMessage, error) {
+	mongo, err := Init(mongo_pkg)
+	if err != nil {
+		return nil, err
+	}
+
+	defer mongo.MongoPkgStruct.Cancel()
+	collection := mongo.MongoPkgStruct.Db.Collection(model.ChatMessageCollectionName)
+	cursor, err := collection.Find(mongo.MongoPkgStruct.Ctx, bson.M{"roomid": roomID})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(mongo.MongoPkgStruct.Ctx)
+
+	var messages []model.ChatMessage
+	for cursor.Next(mongo.MongoPkgStruct.Ctx) {
+		var message model.ChatMessage
+		if err := cursor.Decode(&message); err != nil {
+			return nil, err
+		}
+		messages = append(messages, message)
+	}
+
+	return messages, nil
 }

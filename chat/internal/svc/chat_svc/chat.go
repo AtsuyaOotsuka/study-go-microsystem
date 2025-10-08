@@ -4,6 +4,7 @@ import "microservices/chat/internal/model"
 
 type ChatSvcInterface interface {
 	ConvertRoomList(rooms []model.Room, userId int) []Room
+	GetRoomInfo(room model.Room, userId int) Room
 }
 
 type ChatSvcStruct struct{}
@@ -32,19 +33,23 @@ func contains(members []int, target int) bool {
 	return false
 }
 
+func (s *ChatSvcStruct) GetRoomInfo(room model.Room, userId int) Room {
+	return Room{
+		ID:          room.ID.Hex(),
+		Name:        room.Name,
+		OwnerID:     room.OwnerID,
+		IsPrivate:   room.IsPrivate,
+		IsMember:    contains(room.Members, userId),
+		IsOwner:     room.OwnerID == userId,
+		MemberCount: len(room.Members),
+		CreatedAt:   room.CreatedAt.String(),
+	}
+}
+
 func (s *ChatSvcStruct) ConvertRoomList(rooms []model.Room, userId int) []Room {
 	var responses []Room
 	for _, room := range rooms {
-		response := Room{
-			ID:          room.ID.Hex(),
-			Name:        room.Name,
-			OwnerID:     room.OwnerID,
-			IsPrivate:   room.IsPrivate,
-			IsMember:    contains(room.Members, userId),
-			IsOwner:     room.OwnerID == userId,
-			MemberCount: len(room.Members),
-			CreatedAt:   room.CreatedAt.String(),
-		}
+		response := s.GetRoomInfo(room, userId)
 		responses = append(responses, response)
 	}
 	return responses

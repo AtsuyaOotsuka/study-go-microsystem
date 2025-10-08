@@ -15,3 +15,8 @@ func (m *ChatSvcMock) ConvertRoomList(rooms []model.Room, userId int) []chat_svc
 	args := m.Called(rooms, userId)
 	return args.Get(0).([]chat_svc.Room)
 }
+
+func (m *ChatSvcMock) GetRoomInfo(room model.Room, userId int) chat_svc.Room {
+	args := m.Called(room, userId)
+	return args.Get(0).(chat_svc.Room)
+}

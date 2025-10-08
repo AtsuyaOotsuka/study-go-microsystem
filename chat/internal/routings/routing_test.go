@@ -26,6 +26,9 @@ func (m *MockHandlers) RoomListHandler(c *gin.Context) {
 func (m *MockHandlers) PostChatMessageHandler(c *gin.Context) {
 	c.JSON(200, gin.H{"status": "success"})
 }
+func (m *MockHandlers) LoadChatHandlers(c *gin.Context) {
+	c.JSON(200, gin.H{"status": "success"})
+}
 
 type MockMiddleware struct{}
 

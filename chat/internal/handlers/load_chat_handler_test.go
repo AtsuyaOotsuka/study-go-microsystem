@@ -3,19 +3,19 @@ package handlers
 import (
 	"context"
 	"microservices/chat/internal/model"
+	"microservices/chat/internal/svc/chat_svc"
 	"microservices/chat/internal/svc/jwtinfo_svc"
 	"microservices/chat/tests/mocks/svc/mock_chat_svc"
 	"microservices/chat/tests/mocks/svc/mock_mongo_svc"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestJoinRoomHandler(t *testing.T) {
+func TestLoadChatHandlers(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -23,26 +23,26 @@ func TestJoinRoomHandler(t *testing.T) {
 	mongoMockPkg := &MongoPkgMock{}
 	mongoMockSvc := new(mock_mongo_svc.MongoSvcMock)
 	mongoMockSvc.On("GetRoomByID", "valid_room_id", mongoMockPkg).Return(model.Room{}, nil)
+	mongoMockSvc.On("GetChatMessages", "valid_room_id", mongoMockPkg).Return([]model.ChatMessage{}, nil)
 
-	mongoMockSvc.On("JoinRoom", "valid_room_id", int(12345), mongoMockPkg).Return(nil)
 	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
+	chatMockSvc.On("GetRoomInfo", model.Room{}, int(12345)).Return(chat_svc.Room{IsMember: true, IsOwner: false})
 
-	body := strings.NewReader("room_id=valid_room_id")
-	req := httptest.NewRequest("POST", "/join_room", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req := httptest.NewRequest("GET", "/load_chat/valid_room_id", nil)
 	ctx := context.WithValue(req.Context(), jwtinfo_svc.UserIDKey, 12345)
 	ctx = context.WithValue(ctx, jwtinfo_svc.EmailKey, "test@example.com")
+	c.Params = append(c.Params, gin.Param{Key: "room_id", Value: "valid_room_id"})
 	req = req.WithContext(ctx)
 	c.Request = req
 
 	handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
-	handler.JoinRoomHandler(c)
+	handler.LoadChatHandlers(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "Joined room successfully")
+	assert.Contains(t, w.Body.String(), "messages")
 }
 
-func TestJoinRoomHandlerGetRoomByIDError(t *testing.T) {
+func TestLoadChatHandlersGetRoomByIDError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -53,22 +53,21 @@ func TestJoinRoomHandlerGetRoomByIDError(t *testing.T) {
 
 	mongoMockSvc.On("GetRoomByID", "valid_room_id", mongoMockPkg).Return(model.Room{}, assert.AnError)
 
-	body := strings.NewReader("room_id=valid_room_id")
-	req := httptest.NewRequest("POST", "/join_room", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req := httptest.NewRequest("GET", "/load_chat/valid_room_id", nil)
 	ctx := context.WithValue(req.Context(), jwtinfo_svc.UserIDKey, 12345)
 	ctx = context.WithValue(ctx, jwtinfo_svc.EmailKey, "test@example.com")
+	c.Params = append(c.Params, gin.Param{Key: "room_id", Value: "valid_room_id"})
 	req = req.WithContext(ctx)
 	c.Request = req
 
 	handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
-	handler.JoinRoomHandler(c)
+	handler.LoadChatHandlers(c)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	assert.Contains(t, w.Body.String(), "Failed to get room")
 }
 
-func TestJoinRoomHandlerJoinRoomError(t *testing.T) {
+func TestLoadChatHandlersGetRoomInfoError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -76,44 +75,47 @@ func TestJoinRoomHandlerJoinRoomError(t *testing.T) {
 	mongoMockPkg := &MongoPkgMock{}
 	mongoMockSvc := new(mock_mongo_svc.MongoSvcMock)
 	mongoMockSvc.On("GetRoomByID", "valid_room_id", mongoMockPkg).Return(model.Room{}, nil)
-	mongoMockSvc.On("JoinRoom", "valid_room_id", int(12345), mongoMockPkg).Return(assert.AnError)
-	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
 
-	body := strings.NewReader("room_id=valid_room_id")
-	req := httptest.NewRequest("POST", "/join_room", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
+	chatMockSvc.On("GetRoomInfo", model.Room{}, int(12345)).Return(chat_svc.Room{IsMember: false, IsOwner: false})
+
+	req := httptest.NewRequest("GET", "/load_chat/valid_room_id", nil)
 	ctx := context.WithValue(req.Context(), jwtinfo_svc.UserIDKey, 12345)
 	ctx = context.WithValue(ctx, jwtinfo_svc.EmailKey, "test@example.com")
+	c.Params = append(c.Params, gin.Param{Key: "room_id", Value: "valid_room_id"})
 	req = req.WithContext(ctx)
 	c.Request = req
 
 	handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
-	handler.JoinRoomHandler(c)
+	handler.LoadChatHandlers(c)
 
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	assert.Contains(t, w.Body.String(), "Failed to join room")
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), "Access denied")
 }
 
-func TestJoinRoomHandlerInvalidRequest(t *testing.T) {
+func TestLoadChatHandlersGetChatMessagesError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
 	mongoMockPkg := &MongoPkgMock{}
 	mongoMockSvc := new(mock_mongo_svc.MongoSvcMock)
-	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
+	mongoMockSvc.On("GetRoomByID", "valid_room_id", mongoMockPkg).Return(model.Room{}, nil)
+	mongoMockSvc.On("GetChatMessages", "valid_room_id", mongoMockPkg).Return([]model.ChatMessage{}, assert.AnError)
 
-	body := strings.NewReader("") // Missing 'room_id' field
-	req := httptest.NewRequest("POST", "/join_room", body)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
+	chatMockSvc.On("GetRoomInfo", model.Room{}, int(12345)).Return(chat_svc.Room{IsMember: true, IsOwner: false})
+
+	req := httptest.NewRequest("GET", "/load_chat/valid_room_id", nil)
 	ctx := context.WithValue(req.Context(), jwtinfo_svc.UserIDKey, 12345)
 	ctx = context.WithValue(ctx, jwtinfo_svc.EmailKey, "test@example.com")
+	c.Params = append(c.Params, gin.Param{Key: "room_id", Value: "valid_room_id"})
 	req = req.WithContext(ctx)
 	c.Request = req
 
 	handler := NewHandlers(mongoMockSvc, mongoMockPkg, chatMockSvc)
-	handler.JoinRoomHandler(c)
+	handler.LoadChatHandlers(c)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Contains(t, w.Body.String(), "Invalid request")
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "Failed to get chat messages")
 }

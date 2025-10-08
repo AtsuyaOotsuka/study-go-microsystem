@@ -36,6 +36,11 @@ func (m *MongoSvcMock) PostChatMessage(roomID string, userID int, message string
 	return args.Error(0)
 }
 
+func (m *MongoSvcMock) GetChatMessages(roomID string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.ChatMessage, error) {
+	args := m.Called(roomID, mongo_pkg)
+	return args.Get(0).([]model.ChatMessage), args.Error(1)
+}
+
 type MongoSvcMockWithErrorMock struct {
 	mock.Mock
 }
@@ -61,4 +66,9 @@ func (m *MongoSvcMockWithErrorMock) GetRooms(userID int, target string, mongo_pk
 func (m *MongoSvcMockWithErrorMock) PostChatMessage(roomID string, userID int, message string, mongo_pkg mongo_pkg.MongoPkgInterface) error {
 	args := m.Called(roomID, userID, message, mongo_pkg)
 	return args.Error(0)
+}
+
+func (m *MongoSvcMockWithErrorMock) GetChatMessages(roomID string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.ChatMessage, error) {
+	args := m.Called(roomID, mongo_pkg)
+	return args.Get(0).([]model.ChatMessage), args.Error(1)
 }

@@ -540,3 +540,106 @@ func TestPostChatMessageWithInsertOneError(t *testing.T) {
 
 	mongoPkgMock.AssertExpectations(t)
 }
+
+func TestGetChatMessages(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	var chatMessage model.ChatMessage
+	mongoCursorMock := new(mock_mongo_pkg.MongoCursorMock)
+	mongoCursorMock.On("Next", mock.Anything).Return(true).Once()
+	mongoCursorMock.On("Next", mock.Anything).Return(false).Once()
+	mongoCursorMock.On("Decode", &chatMessage).Return(nil)
+	mongoCursorMock.On("Close", mock.Anything).Return(nil)
+
+	filter := bson.M{"roomid": "64a7b2f4e13e4c3f9c8b4567"}
+
+	mongoCollectionMock.On("Find", mock.Anything, filter).Return(mongoCursorMock, nil)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", model.ChatMessageCollectionName).Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+	_, err := mockSvcStruct.GetChatMessages("64a7b2f4e13e4c3f9c8b4567", mongoPkgMock)
+
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestGetChatMessagesError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgWithErrorMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(nil, assert.AnError)
+
+	mockSvcStruct := NewMongoSvc(nil)
+
+	_, err := mockSvcStruct.GetChatMessages("64a7b2f4e13e4c3f9c8b4567", mongoPkgMock)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestGetChatMessagesWithFindError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	mongoCursorMock := new(mock_mongo_pkg.MongoCursorMock)
+
+	filter := bson.M{"roomid": "64a7b2f4e13e4c3f9c8b4567"}
+
+	mongoCollectionMock.On("Find", mock.Anything, filter).Return(mongoCursorMock, assert.AnError)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", model.ChatMessageCollectionName).Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+	_, err := mockSvcStruct.GetChatMessages("64a7b2f4e13e4c3f9c8b4567", mongoPkgMock)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestGetChatMessagesWithDecodeError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	var chatMessage model.ChatMessage
+	mongoCursorMock := new(mock_mongo_pkg.MongoCursorMock)
+	mongoCursorMock.On("Next", mock.Anything).Return(true).Once()
+	mongoCursorMock.On("Next", mock.Anything).Return(false).Once()
+	mongoCursorMock.On("Decode", &chatMessage).Return(assert.AnError)
+	mongoCursorMock.On("Close", mock.Anything).Return(nil)
+
+	filter := bson.M{"roomid": "64a7b2f4e13e4c3f9c8b4567"}
+
+	mongoCollectionMock.On("Find", mock.Anything, filter).Return(mongoCursorMock, nil)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", model.ChatMessageCollectionName).Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+	_, err := mockSvcStruct.GetChatMessages("64a7b2f4e13e4c3f9c8b4567", mongoPkgMock)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}

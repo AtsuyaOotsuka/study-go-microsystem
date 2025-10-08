@@ -14,6 +14,7 @@ type HandlersInterface interface {
 	JoinRoomHandler(c *gin.Context)
 	RoomListHandler(c *gin.Context)
 	PostChatMessageHandler(c *gin.Context)
+	LoadChatHandlers(c *gin.Context)
 }
 
 type HandlerStruct struct {
