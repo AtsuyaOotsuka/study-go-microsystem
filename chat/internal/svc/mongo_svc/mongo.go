@@ -17,6 +17,7 @@ type MongoSvcInterface interface {
 	GetRooms(userID int, target string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.Room, error)
 	PostChatMessage(roomID string, userID int, message string, mongo_pkg mongo_pkg.MongoPkgInterface) error
 	GetChatMessages(roomID string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.ChatMessage, error)
+	ReadChatMessages(roomID string, chatID []string, userID int, mongo_pkg mongo_pkg.MongoPkgInterface) error
 }
 
 type MongoSvcStruct struct {
@@ -211,4 +212,39 @@ func (m *MongoSvcStruct) GetChatMessages(roomID string, mongo_pkg mongo_pkg.Mong
 	}
 
 	return messages, nil
+}
+
+func (m *MongoSvcStruct) ReadChatMessages(roomID string, chatID []string, userID int, mongo_pkg mongo_pkg.MongoPkgInterface) error {
+	mongo, err := Init(mongo_pkg)
+	if err != nil {
+		return err
+	}
+
+	defer mongo.MongoPkgStruct.Cancel()
+	collection := mongo.MongoPkgStruct.Db.Collection(model.ChatMessageCollectionName)
+
+	var chatObjectIDs []primitive.ObjectID
+	for _, id := range chatID {
+		chatObjectID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return err
+		}
+		chatObjectIDs = append(chatObjectIDs, chatObjectID)
+	}
+
+	filter := bson.M{
+		"_id":    bson.M{"$in": chatObjectIDs},
+		"roomid": roomID,
+	}
+
+	update := bson.M{
+		"$addToSet": bson.M{"IsReadUserIds": userID}, // 重複追加防止してくれる
+	}
+
+	_, err = collection.UpdateMany(mongo.MongoPkgStruct.Ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

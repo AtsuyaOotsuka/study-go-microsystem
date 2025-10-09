@@ -51,6 +51,7 @@ type MongoCollectionInterface interface {
 	Find(ctx context.Context, filter interface{}) (cursor MongoCursorInterface, err error)
 	FindOne(ctx context.Context, filter interface{}, object interface{}) error
 	UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error)
+	UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error)
 }
 
 type RealMongoCollection struct {
@@ -68,6 +69,10 @@ func (r *RealMongoCollection) InsertOne(ctx context.Context, document interface{
 	}
 
 	return id.Hex(), nil
+}
+
+func (r *RealMongoCollection) UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error) {
+	return r.coll.UpdateMany(ctx, filter, update)
 }
 
 func (r *RealMongoCollection) Find(ctx context.Context, filter interface{}) (cursor MongoCursorInterface, err error) {

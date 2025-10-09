@@ -643,3 +643,116 @@ func TestGetChatMessagesWithDecodeError(t *testing.T) {
 
 	mongoPkgMock.AssertExpectations(t)
 }
+
+func TestReadChatMessages(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	mongoCollectionMock.On("UpdateMany", mock.Anything, mock.Anything, mock.Anything).Return(&mongo.UpdateResult{}, nil)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", model.ChatMessageCollectionName).Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+	err := mockSvcStruct.ReadChatMessages(
+		"64a7b2f4e13e4c3f9c8b4567",
+		[]string{
+			"64a7b2f4e13e4c3f9c8b4568",
+			"64a7b2f4e13e4c3f9c8b4569",
+		},
+		1,
+		mongoPkgMock,
+	)
+
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestReadChatMessagesError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgWithErrorMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(nil, assert.AnError)
+
+	mockSvcStruct := NewMongoSvc(nil)
+
+	err := mockSvcStruct.ReadChatMessages(
+		"64a7b2f4e13e4c3f9c8b4567",
+		[]string{
+			"64a7b2f4e13e4c3f9c8b4568",
+			"64a7b2f4e13e4c3f9c8b4569",
+		},
+		1,
+		mongoPkgMock,
+	)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestReadChatMessagesWithObjectIDFromHexError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", model.ChatMessageCollectionName).Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+
+	err := mockSvcStruct.ReadChatMessages(
+		"64a7b2f4e13e4c3f9c8b4567",
+		[]string{
+			"invalid_object_id",
+			"64a7b2f4e13e4c3f9c8b4569",
+		},
+		1,
+		mongoPkgMock,
+	)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}
+
+func TestReadChatMessagesWithUpdateManyError(t *testing.T) {
+	mongoPkgMock := new(mock_mongo_pkg.MongoPkgMock)
+	mongoCollectionMock := new(mock_mongo_pkg.MongoCollectionMock)
+	mongoCollectionMock.On("UpdateMany", mock.Anything, mock.Anything, mock.Anything).Return(&mongo.UpdateResult{}, assert.AnError)
+	mongoDatabaseMock := new(mock_mongo_pkg.MongoDatabaseMock)
+	mongoDatabaseMock.On("Collection", model.ChatMessageCollectionName).Return(mongoCollectionMock)
+	mongoPkgMock.On("NewMongoConnect", "chatapp").Return(&mongo_pkg.MongoPkgStruct{
+		Ctx:    context.TODO(),
+		Db:     mongoDatabaseMock,
+		Cancel: func() {},
+	}, nil)
+
+	mockSvcStruct := NewMongoSvc(mongoDatabaseMock)
+	err := mockSvcStruct.ReadChatMessages(
+		"64a7b2f4e13e4c3f9c8b4567",
+		[]string{
+			"64a7b2f4e13e4c3f9c8b4568",
+			"64a7b2f4e13e4c3f9c8b4569",
+		},
+		1,
+		mongoPkgMock,
+	)
+
+	if err == nil {
+		t.Errorf("Expected error, but got none")
+	}
+
+	mongoPkgMock.AssertExpectations(t)
+}

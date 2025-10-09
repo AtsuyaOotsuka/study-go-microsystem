@@ -60,6 +60,11 @@ func (m *MongoCollectionMock) UpdateOne(ctx context.Context, filter interface{},
 	return args.Get(0).(*mongo.UpdateResult), args.Error(1)
 }
 
+func (m *MongoCollectionMock) UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error) {
+	args := m.Called(ctx, filter, update)
+	return args.Get(0).(*mongo.UpdateResult), args.Error(1)
+}
+
 type MongoPkgStructMock struct {
 	Ctx context.Context
 	Db  mongo_pkg.MongoDatabaseInterface
@@ -89,6 +94,11 @@ func (m *MongoCollectionInsertErrorMock) FindOne(ctx context.Context, filter int
 }
 
 func (m *MongoCollectionInsertErrorMock) UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error) {
+	args := m.Called(ctx, filter, update)
+	return args.Get(0).(*mongo.UpdateResult), args.Error(1)
+}
+
+func (m *MongoCollectionInsertErrorMock) UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error) {
 	args := m.Called(ctx, filter, update)
 	return args.Get(0).(*mongo.UpdateResult), args.Error(1)
 }
