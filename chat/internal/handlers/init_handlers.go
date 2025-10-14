@@ -16,6 +16,7 @@ type HandlersInterface interface {
 	PostChatMessageHandler(c *gin.Context)
 	LoadChatHandlers(c *gin.Context)
 	ReadChatMessages(c *gin.Context)
+	DeleteChatMessageHandler(c *gin.Context)
 }
 
 type HandlerStruct struct {

@@ -18,6 +18,8 @@ type MongoSvcInterface interface {
 	PostChatMessage(roomID string, userID int, message string, mongo_pkg mongo_pkg.MongoPkgInterface) error
 	GetChatMessages(roomID string, mongo_pkg mongo_pkg.MongoPkgInterface) ([]model.ChatMessage, error)
 	ReadChatMessages(roomID string, chatID []string, userID int, mongo_pkg mongo_pkg.MongoPkgInterface) error
+	GetChatMessageByID(roomID string, messageID string, mongo_pkg mongo_pkg.MongoPkgInterface) (model.ChatMessage, error)
+	DeleteChatMessage(roomID string, messageID string, mongo_pkg mongo_pkg.MongoPkgInterface) error
 }
 
 type MongoSvcStruct struct {
@@ -242,6 +244,51 @@ func (m *MongoSvcStruct) ReadChatMessages(roomID string, chatID []string, userID
 	}
 
 	_, err = collection.UpdateMany(mongo.MongoPkgStruct.Ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *MongoSvcStruct) GetChatMessageByID(roomID string, messageID string, mongo_pkg mongo_pkg.MongoPkgInterface) (model.ChatMessage, error) {
+	mongo, err := Init(mongo_pkg)
+	if err != nil {
+		return model.ChatMessage{}, err
+	}
+
+	defer mongo.MongoPkgStruct.Cancel()
+	collection := mongo.MongoPkgStruct.Db.Collection(model.ChatMessageCollectionName)
+
+	id, err := primitive.ObjectIDFromHex(messageID)
+	if err != nil {
+		return model.ChatMessage{}, err
+	}
+
+	var message model.ChatMessage
+	err = collection.FindOne(mongo.MongoPkgStruct.Ctx, bson.M{"_id": id, "roomid": roomID}, &message)
+	if err != nil {
+		return model.ChatMessage{}, err
+	}
+
+	return message, nil
+}
+
+func (m *MongoSvcStruct) DeleteChatMessage(roomID string, messageID string, mongo_pkg mongo_pkg.MongoPkgInterface) error {
+	mongo, err := Init(mongo_pkg)
+	if err != nil {
+		return err
+	}
+
+	defer mongo.MongoPkgStruct.Cancel()
+	collection := mongo.MongoPkgStruct.Db.Collection(model.ChatMessageCollectionName)
+
+	id, err := primitive.ObjectIDFromHex(messageID)
+	if err != nil {
+		return err
+	}
+
+	_, err = collection.DeleteOne(mongo.MongoPkgStruct.Ctx, bson.M{"_id": id, "roomid": roomID})
 	if err != nil {
 		return err
 	}

@@ -52,6 +52,7 @@ type MongoCollectionInterface interface {
 	FindOne(ctx context.Context, filter interface{}, object interface{}) error
 	UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error)
 	UpdateMany(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error)
+	DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error)
 }
 
 type RealMongoCollection struct {
@@ -87,6 +88,10 @@ func (r *RealMongoCollection) FindOne(ctx context.Context, filter interface{}, o
 
 func (r *RealMongoCollection) UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error) {
 	return r.coll.UpdateOne(ctx, filter, update)
+}
+
+func (r *RealMongoCollection) DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error) {
+	return r.coll.DeleteOne(ctx, filter)
 }
 
 // Mongo Client

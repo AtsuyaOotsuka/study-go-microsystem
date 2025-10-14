@@ -46,6 +46,16 @@ func (m *MongoSvcMock) ReadChatMessages(roomID string, chatID []string, userID i
 	return args.Error(0)
 }
 
+func (m *MongoSvcMock) GetChatMessageByID(roomID string, messageID string, mongo_pkg mongo_pkg.MongoPkgInterface) (model.ChatMessage, error) {
+	args := m.Called(roomID, messageID, mongo_pkg)
+	return args.Get(0).(model.ChatMessage), args.Error(1)
+}
+
+func (m *MongoSvcMock) DeleteChatMessage(roomID string, messageID string, mongo_pkg mongo_pkg.MongoPkgInterface) error {
+	args := m.Called(roomID, messageID, mongo_pkg)
+	return args.Error(0)
+}
+
 type MongoSvcMockWithErrorMock struct {
 	mock.Mock
 }
@@ -80,5 +90,15 @@ func (m *MongoSvcMockWithErrorMock) GetChatMessages(roomID string, mongo_pkg mon
 
 func (m *MongoSvcMockWithErrorMock) ReadChatMessages(roomID string, chatID []string, userID int, mongo_pkg mongo_pkg.MongoPkgInterface) error {
 	args := m.Called(roomID, chatID, userID, mongo_pkg)
+	return args.Error(0)
+}
+
+func (m *MongoSvcMockWithErrorMock) GetChatMessageByID(roomID string, messageID string, mongo_pkg mongo_pkg.MongoPkgInterface) (model.ChatMessage, error) {
+	args := m.Called(roomID, messageID, mongo_pkg)
+	return args.Get(0).(model.ChatMessage), args.Error(1)
+}
+
+func (m *MongoSvcMockWithErrorMock) DeleteChatMessage(roomID string, messageID string, mongo_pkg mongo_pkg.MongoPkgInterface) error {
+	args := m.Called(roomID, messageID, mongo_pkg)
 	return args.Error(0)
 }

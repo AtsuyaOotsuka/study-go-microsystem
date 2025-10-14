@@ -19,5 +19,6 @@ func Routing(r *gin.Engine, csrfMW gin.HandlerFunc, authMW gin.HandlerFunc, hand
 	r.POST("/post_chat_message", handlers.PostChatMessageHandler)
 	r.GET("/load_chat/:room_id", handlers.LoadChatHandlers)
 	r.POST("/read_chat", handlers.ReadChatMessages)
+	r.DELETE("/delete_chat_message", handlers.DeleteChatMessageHandler)
 	r.GET("/health", handlers.HealthCheckHandler)
 }
