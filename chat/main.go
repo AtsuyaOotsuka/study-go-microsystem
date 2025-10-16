@@ -9,6 +9,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+func SetupRouter() *gin.Engine {
+	r := gin.New()
+	r.Use(gin.Recovery())
+
+	app := app.NewApp()
+	app.InitRoutes(r)
+
+	return r
+}
+
 func main() {
 	// .envを読み込む
 	err := godotenv.Load()
@@ -21,11 +31,7 @@ func main() {
 		mode = gin.DebugMode // fallback
 	}
 	gin.SetMode(mode)
-	r := gin.New()
-	r.Use(gin.Recovery())
-
-	app := app.NewApp()
-	app.InitRoutes(r)
+	r := SetupRouter()
 
 	port := os.Getenv("PORT")
 	if port == "" {

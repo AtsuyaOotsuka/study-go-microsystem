@@ -1,6 +1,6 @@
 #!bin/bash
 
-go test ./... -coverprofile=coverage.out && \
+ENV_FILE=.env.test go test ./... -coverprofile=coverage.out && \
 if [ $? -ne 0 ]; then
   echo "Tests failed. Exiting."
   exit 1
