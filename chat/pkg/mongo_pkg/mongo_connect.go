@@ -65,23 +65,3 @@ func (m *MongoPkg) NewMongoConnect(database string) (*MongoPkgStruct, error) {
 
 	return mongoPkgStruct, nil
 }
-
-// func (m *MongoPkgStruct) ReConnect() error {
-// 	// 古いコンテキストをキャンセル
-// 	if m.Cancel != nil {
-// 		m.Cancel()
-// 	}
-
-// 	// 新しい接続を確立
-// 	client, ctx, cancelFunc, err := connect()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	m.Ctx = ctx
-// 	m.Cancel = cancelFunc
-// 	m.Db = client.Database("chatapp")
-// 	fmt.Println("ReConnected to MongoDB!")
-
-// 	return nil
-// }

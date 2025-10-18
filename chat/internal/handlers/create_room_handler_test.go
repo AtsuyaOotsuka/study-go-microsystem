@@ -39,7 +39,7 @@ func TestCreateRoomHandler(t *testing.T) {
 	chatMockSvc := new(mock_chat_svc.ChatSvcMock)
 
 	body := strings.NewReader("name=TestRoom")
-	req := httptest.NewRequest("POST", "/rooms", body)
+	req := httptest.NewRequest("POST", "/room_create", body)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	ctx := context.WithValue(req.Context(), jwtinfo_svc.UserIDKey, 12345)
 	ctx = context.WithValue(ctx, jwtinfo_svc.EmailKey, "test@example.com")
