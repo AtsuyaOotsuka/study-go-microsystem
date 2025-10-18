@@ -1,4 +1,4 @@
-package funcs
+package test_funcs
 
 import (
 	"os"

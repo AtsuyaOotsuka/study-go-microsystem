@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 	r := SetupRouter()
 	testServer = &http.Server{
-		Addr:    ":8081",
+		Addr:    ":8881",
 		Handler: r,
 	}
 
@@ -49,7 +49,7 @@ func TestMain(m *testing.M) {
 
 	// サーバが立ち上がるまで待つ（またはヘルスチェックする）
 	time.Sleep(200 * time.Millisecond)
-	baseURL = "http://localhost:8081"
+	baseURL = "http://localhost:8881"
 
 	fmt.Println("Test server started at", baseURL)
 

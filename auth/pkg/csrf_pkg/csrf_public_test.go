@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"microservices/auth/pkg/csrf_pkg"
-	"microservices/auth/tests/funcs"
+	"microservices/auth/tests/test_funcs"
 	"strconv"
 	"testing"
 )
@@ -32,7 +32,7 @@ func TestGenerateNonceString_Length(t *testing.T) {
 }
 
 func TestGetSecret(t *testing.T) {
-	funcs.WithEnv("CSRF_TOKEN", "test_secret", t, func() {
+	test_funcs.WithEnv("CSRF_TOKEN", "test_secret", t, func() {
 
 		csrf := csrf_pkg.CsrfPkgStruct{}
 		got := csrf.GetSecret()
@@ -45,7 +45,7 @@ func TestGetSecret(t *testing.T) {
 func TestGetSecret_Empty(t *testing.T) {
 
 	csrf := csrf_pkg.CsrfPkgStruct{}
-	funcs.WithEnv("CSRF_TOKEN", "", t, func() {
+	test_funcs.WithEnv("CSRF_TOKEN", "", t, func() {
 		defer func() {
 			if r := recover(); r == nil {
 				t.Errorf("Expected panic when CSRF_TOKEN is empty")

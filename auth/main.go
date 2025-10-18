@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"microservices/auth/internal/app"
 	"microservices/auth/pkg/db_pkg"
@@ -8,7 +9,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 )
+
+func SetupRouter(db *gorm.DB, sqlDB *sql.DB) (*gin.Engine, func()) {
+	r := gin.New()
+	r.Use(gin.Recovery())
+
+	app, cleanup, _ := app.NewApp(db, sqlDB)
+
+	app.InitRoutes(r)
+
+	return r, cleanup
+}
+
+func SetupDB() (*gorm.DB, *sql.DB) {
+	db_pkg := db_pkg.NewDBConnect()
+	db, _ := db_pkg.ConnectDB()
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return db, sqlDB
+}
 
 func main() {
 	// .envを読み込む
@@ -22,21 +47,10 @@ func main() {
 		mode = gin.DebugMode // fallback
 	}
 	gin.SetMode(mode)
-	r := gin.New()
-	r.Use(gin.Recovery())
 
-	db_pkg := db_pkg.NewDBConnect()
-	db, _ := db_pkg.ConnectDB()
-
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	app, cleanup, _ := app.NewApp(db, sqlDB)
+	db, sqlDB := SetupDB()
+	r, cleanup := SetupRouter(db, sqlDB)
 	defer cleanup()
-
-	app.InitRoutes(r)
 
 	port := os.Getenv("PORT")
 	if port == "" {
